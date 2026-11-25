@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile — MyCommerce{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+
+    <!-- Profile Header -->
+    <div class="profile-header">
+        <div class="profile-avatar">
+            {% if customer_profile.profile_image %}
+                <img src="{{ customer_profile.profile_image.url }}" alt="Profile picture">
+            {% else %}
+                <div class="avatar-placeholder">
+                    {{ user.first_name|first|default:user.username|first }}
+                </div>
+            {% endif %}
+        </div>
+        <div class="profile-intro">
+            <h1>{{ user.get_full_name|default:user.username }}</h1>
+            <p class="profile-email">{{ user.email|default:"No email set" }}</p>
+        </div>
+    </div>
+
+    <!-- Info Cards -->
+    <div class="profile-grid">
+
+        <!-- Account Info -->
+        <div class="profile-card">
+            <h3>Account Information</h3>
+            <div class="info-row">
+                <span class="info-label">Username</span>
+                <span class="info-value">{{ user.username }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">First name</span>
+                <span class="info-value">{{ user.first_name|default:"—" }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Last name</span>
+                <span class="info-value">{{ user.last_name|default:"—" }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Email</span>
+                <span class="info-value">{{ user.email|default:"—" }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Phone</span>
+                <span class="info-value">{{ customer_profile.phone|default:"—" }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Member since</span>
+                <span class="info-value">{{ user.date_joined|date:"M d, Y" }}</span>
+            </div>
+        </div>
+
+        <!-- Address Info -->
+        <div class="profile-card">
+            <h3>Address</h3>
+            {% if customer_profile.address %}
+                <div class="info-row">
+                    <span class="info-label">Street</span>
+                    <span class="info-value">{{ customer_profile.address.address_line }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">City</span>
+                    <span class="info-value">{{ customer_profile.address.city }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Postal code</span>
+                    <span class="info-value">{{ customer_profile.address.postal_code }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Country</span>
+                    <span class="info-value">{{ customer_profile.address.country }}</span>
+                </div>
+            {% else %}
+                <p class="no-data">No address added yet.</p>
+            {% endif %}
+        </div>
+
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}Products — MyCommerce{% endblock %}
+
+{% block content %}
+<section class="products-header">
+    <div>
+        <h1>Our Products</h1>
+        <p class="products-subtitle">Browse our latest collection across Technology, Clothing, and Beauty.</p>
+    </div>
+
+    <form method="get" action="{% url 'home' %}" class="search-form">
+        <input
+            type="search"
+            name="q"
+            value="{{ query }}"
+            placeholder="Search products by name..."
+            class="search-input"
+            aria-label="Search products by name"
+        >
+        <button type="submit" class="search-btn">Search</button>
+        {% if query %}
+            <a href="{% url 'home' %}" class="search-clear">Clear</a>
+        {% endif %}
+    </form>
+</section>
+
+<div class="catalog-layout">
+    <section class="catalog-results" aria-label="Product results">
+        {% if products %}
+            <div class="products-grid">
+                {% for product in products %}
+                    <article class="product-card">
+                        <div class="product-image-wrap">
+                            {% with first_image=product.images.first %}
+                                {% if first_image %}
+                                    <img src="{{ first_image.image.url }}" alt="{{ product.product_name }}" class="product-image">
+                                {% else %}
+                                    <div class="product-image-placeholder">No Image</div>
+                                {% endif %}
+                            {% endwith %}
+                            <span class="product-category-badge">{{ product.product_category.category_name }}</span>
+                        </div>
+
+                        <div class="product-body">
+                            <h2 class="product-title">{{ product.product_name }}</h2>
+                            <p class="product-description">{{ product.description|truncatewords:16 }}</p>
+
+                            {% if product.variants.all %}
+                                <div class="product-variants">
+                                    {% for variant in product.variants.all %}
+                                        <span class="variant-chip">{{ variant.name }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+
+                            <div class="product-footer">
+                                <span class="product-price">${{ product.price }}</span>
+                            </div>
+                            {% with available_variants=product.variants.all %}
+                                {% if available_variants %}
+                                    <form method="post" action="{% url 'cart:add' product.id %}" class="add-cart-form">
+                                        {% csrf_token %}
+                                        <label class="cart-variant-label" for="variant-{{ product.id }}">Choose an option</label>
+                                        <select id="variant-{{ product.id }}" name="variant" required>
+                                            <option value="" selected disabled>Choose an option</option>
+                                            {% for variant in available_variants %}
+                                                <option value="{{ variant.id }}" {% if not variant.stock %}disabled{% endif %}>
+                                                    {{ variant.name }}{% if variant.color %} · {{ variant.color }}{% endif %}
+                                                    {% if variant.storage_size %} · {{ variant.storage_size }}{% endif %}
+                                                    {% if variant.stock %} ({{ variant.stock }} in stock){% else %} (Out of stock){% endif %}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                        <label class="cart-quantity-label" for="quantity-{{ product.id }}">Quantity</label>
+                                        <input id="quantity-{{ product.id }}" type="number" name="quantity" value="1" min="1" required>
+                                        <button type="submit" class="add-cart-button" {% if not product.available_variant_count %}disabled{% endif %}>
+                                            Add to cart
+                                        </button>
+                                        {% if not product.available_variant_count %}
+                                            <p class="stock-unavailable">All options are out of stock.</p>
+                                        {% endif %}
+                                    </form>
+                                {% else %}
+                                    <p class="stock-unavailable">No options available</p>
+                                {% endif %}
+                            {% endwith %}
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            {% if query %}
+                <p class="no-data">No products found matching "{{ query }}" with these filters.</p>
+            {% else %}
+                <p class="no-data">No products match these filters.</p>
+            {% endif %}
+        {% endif %}
+    </section>
+
+    <aside class="filter-sidebar">
+        <form method="get" action="{% url 'home' %}" class="filter-form">
+            {% if query %}<input type="hidden" name="q" value="{{ query }}">{% endif %}
+            <fieldset class="filter-section">
+                <legend>Category</legend>
+                {% for category in categories %}
+                    <label class="filter-checkbox">
+                        <input type="checkbox" name="category" value="{{ category.slug }}"
+                            {% if category.slug in selected_categories %}checked{% endif %}>
+                        <span>{{ category.category_name }}</span>
+                    </label>
+                {% empty %}
+                    <p class="filter-hint">No categories available.</p>
+                {% endfor %}
+            </fieldset>
+
+            <fieldset class="filter-section">
+                <legend>Price</legend>
+                <div class="price-range">
+                    <label class="price-field">
+                        <span class="visually-hidden">Minimum price</span>
+                        <input type="number" name="price_min" min="0" step="0.01" value="{{ price_min }}" placeholder="Min">
+                    </label>
+                    <span class="price-separator" aria-hidden="true">–</span>
+                    <label class="price-field">
+                        <span class="visually-hidden">Maximum price</span>
+                        <input type="number" name="price_max" min="0" step="0.01" value="{{ price_max }}" placeholder="Max">
+                    </label>
+                </div>
+            </fieldset>
+
+            <button type="submit" class="search-btn filter-apply">Apply filters</button>
+            <a href="{% url 'home' %}{% if query %}?q={{ query|urlencode }}{% endif %}" class="filter-clear">Clear filters</a>
+        </form>
+    </aside>
+</div>
+{% endblock %}

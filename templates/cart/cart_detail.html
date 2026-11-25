@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}Shopping Cart — MyCommerce{% endblock %}
+
+{% block content %}
+<nav class="cart-breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'home' %}" aria-label="Home">⌂</a>
+    <span aria-hidden="true">/</span>
+    <span>Shopping Cart</span>
+</nav>
+
+<section class="shopping-cart-page">
+    <h1>Shopping Cart</h1>
+
+    <div class="shopping-cart-layout">
+        <section class="cart-products-panel" aria-labelledby="cart-products-heading">
+            <h2 id="cart-products-heading">Your Products</h2>
+            {% if items %}
+                <div class="shopping-cart-items">
+                    {% for item in items %}
+                        <article class="shopping-cart-item">
+                            <div class="shopping-cart-product-image">
+                                {% with first_image=item.variant.product.images.first %}
+                                    {% if first_image %}
+                                        <img src="{{ first_image.image.url }}" alt="{{ item.variant.product.product_name }}">
+                                    {% else %}
+                                        <span>No image</span>
+                                    {% endif %}
+                                {% endwith %}
+                            </div>
+
+                            <div class="shopping-cart-product-info">
+                                <h3>{{ item.variant.product.product_name }}</h3>
+                                <p class="cart-variant-description">
+                                    {{ item.variant.name }}{% if item.variant.color %} · {{ item.variant.color }}{% endif %}{% if item.variant.storage_size %} · {{ item.variant.storage_size }}{% endif %}
+                                </p>
+                                {% if item.quantity > item.variant.stock %}
+                                    <p class="cart-stock-warning">Only {{ item.variant.stock }} currently in stock.</p>
+                                {% endif %}
+                            </div>
+
+                            <form method="post" action="{% url 'cart:update' item.id %}" class="cart-quantity-control">
+                                {% csrf_token %}
+                                <button type="submit" name="quantity" value="{{ item.quantity|add:'-1' }}" aria-label="Decrease quantity">−</button>
+                                <span>{{ item.quantity }}</span>
+                                <button type="submit" name="quantity" value="{{ item.quantity|add:'1' }}" aria-label="Increase quantity" {% if item.quantity >= item.variant.stock %}disabled{% endif %}>+</button>
+                            </form>
+
+                            <div class="shopping-cart-price">
+                                <strong>${{ item.line_total }}</strong>
+                                <span>${{ item.variant.product.price }} / unit</span>
+                            </div>
+
+                            <form method="post" action="{% url 'cart:remove' item.id %}" class="cart-remove-form">
+                                {% csrf_token %}
+                                <button type="submit" aria-label="Remove {{ item.variant.product.product_name }} from cart">×</button>
+                            </form>
+                        </article>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="cart-empty">
+                    <p>Your cart is empty.</p>
+                    <a href="{% url 'home' %}" class="cart-primary-button">Browse products</a>
+                </div>
+            {% endif %}
+        </section>
+
+        <aside class="order-summary" aria-labelledby="order-summary-heading">
+            <h2 id="order-summary-heading">Order Summary</h2>
+            <div class="summary-line">
+                <span>Sub-Total:</span>
+                <strong>${{ total }}</strong>
+            </div>
+            <div class="summary-line summary-total">
+                <span>Total:</span>
+                <strong>${{ total }}</strong>
+            </div>
+            <a href="{% url 'home' %}" class="cart-primary-button">Continue Shopping</a>
+        </aside>
+    </div>
+</section>
+{% endblock %}
