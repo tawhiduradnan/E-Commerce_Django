@@ -43,7 +43,7 @@
                                 {% csrf_token %}
                                 <button type="submit" name="quantity" value="{{ item.quantity|add:'-1' }}" aria-label="Decrease quantity">−</button>
                                 <span>{{ item.quantity }}</span>
-                                <button type="submit" name="quantity" value="{{ item.quantity|add:'1' }}" aria-label="Increase quantity" {% if item.quantity >= item.variant.stock %}disabled{% endif %}>+</button>
+                                <button type="submit" name="quantity" value="{{ item.quantity|add:'1' }}" aria-label="Increase quantity">+</button>
                             </form>
 
                             <div class="shopping-cart-price">

@@ -31,24 +31,31 @@ def add_to_cart(request, product_id):
             product=product,
         )
         cart, _ = Cart.objects.get_or_create(customer=request.user)
-        item, created = CartItem.objects.get_or_create(
-            cart=cart, variant=variant, defaults={"quantity": quantity}
-        )
-        requested_total = quantity if created else item.quantity + quantity
+        item = CartItem.objects.filter(cart=cart, variant=variant).first()
+        cart_quantity = item.quantity if item else 0
+        requested_total = cart_quantity + quantity
 
-        if variant.stock < requested_total:
-            available_to_add = max(variant.stock - (0 if created else item.quantity), 0)
-            if created:
-                item.delete()
-            messages.error(
-                request,
-                f"Only {available_to_add} more of {variant} available. "
-                "Your cart was not changed.",
-            )
+        if requested_total > variant.stock:
+            available_to_add = max(variant.stock - cart_quantity, 0)
+            if available_to_add == 0:
+                messages.error(
+                    request,
+                    f"Stock limit reached for {variant}: only {variant.stock} are "
+                    f"available, and {cart_quantity} are already in your cart. "
+                    "Your cart was not changed.",
+                )
+            else:
+                messages.error(
+                    request,
+                    f"Only {available_to_add} more of {variant} can be added. "
+                    f"You requested {quantity}, but your cart was not changed.",
+                )
+        elif item:
+            item.quantity = requested_total
+            item.save(update_fields=["quantity"])
+            messages.success(request, f"Added {quantity} × {variant} to your cart.")
         else:
-            if not created:
-                item.quantity = requested_total
-                item.save(update_fields=["quantity"])
+            CartItem.objects.create(cart=cart, variant=variant, quantity=quantity)
             messages.success(request, f"Added {quantity} × {variant} to your cart.")
 
     return redirect("cart:view")
@@ -97,7 +104,7 @@ def update_cart_item(request, item_id):
             messages.success(request, "Item removed from your cart.")
         else:
             if quantity > variant.stock:
-                messages.error(request, f"Only {variant.stock} of {variant} are currently in stock.")
+                messages.error(request, "More is not available at this moment.")
             else:
                 item.quantity = quantity
                 item.save(update_fields=["quantity"])
